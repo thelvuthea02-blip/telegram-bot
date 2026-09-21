@@ -31,22 +31,31 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "**ការណែនាំ:**\n"
             "១. ផ្ទេរប្រាក់ទៅកាន់គណនីខាងលើ\n"
             "២. រួច **ផ្ញើរូបភាព Slip បង់ប្រាក់** មកកាន់ Bot នេះ\n"
-            "៣. Admin នឹងពិនិត្យ រួចផ្ញើ Link ចូល Group ជូនភ្លាមៗ!"
+            "៣. Admin នឹងពិនិត្យ រួចផ្ញើ Link ចូល Group ជូន!"
         )
-        await query.message.reply_text(payment_info, parse_mode='Markdown')
+        await update.effective_message.reply_text(payment_info, parse_mode='Markdown')
 
     elif query.data.startswith("approve_"):
         user_id = int(query.data.split("_")[1])
         try:
+            # បង្កើត Link អញ្ជើញចូល Group (ប្រៀបដូចជាសំបុត្រប្រើបាន ១ ដង)
             invite_link = await context.bot.create_chat_invite_link(chat_id=GROUP_CHAT_ID, member_limit=1)
+            
+            # ផ្ញើ Link ទៅកាន់អ្នកប្រើប្រាស់ដែលបានបង់ប្រាក់
             await context.bot.send_message(
                 chat_id=user_id,
                 text=f"🎉 **ការបង់ប្រាក់ត្រូវបានអនុម័ត!**\n\nនេះជា Link សម្រាប់ចូល Group របស់អ្នក:\n{invite_link.invite_link}",
                 parse_mode='Markdown'
             )
-            await query.edit_message_text(text=f"{query.message.text}\n\n✅ **បានអនុម័ត និងផ្ញើ Link រួចរាល់!**")
+            
+            # កែប្រែ Caption លើរូបភាព Slip របស់ Admin (ដោះស្រាយ Error កន្លែងនេះ)
+            old_caption = query.message.caption or ""
+            await query.edit_message_caption(
+                caption=f"{old_caption}\n\n✅ **បានអនុម័ត និងផ្ញើ Link រួចរាល់!**",
+                parse_mode='Markdown'
+            )
         except Exception as e:
-            await query.message.reply_text(f"❌ មានបញ្ហាក្នុងការបង្កើត Link: {e}")
+            await context.bot.send_message(chat_id=ADMIN_ID, text=f"❌ មានបញ្ហាក្នុងការបង្កើត Link: {e}")
 
 async def handle_slip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
