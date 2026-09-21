@@ -25,35 +25,32 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if query.data == "show_qr":
         payment_info = (
-            "📥 **ព័ត៌មានសម្រាប់ការបង់ប្រាក់:**\n\n"
-            "🏦 **ABA Bank:** `000 111 222` (Thel Vuthea)\n"
-            "💵 **តម្លៃ VIP:** 2$ / ខែ\n\n"
-            "**ការណែនាំ:**\n"
+            "📥 ព័ត៌មានសម្រាប់ការបង់ប្រាក់:\n\n"
+            "🏦 ABA Bank: 000 111 222 (Thel Vuthea)\n"
+            "💵 តម្លៃ VIP: 2$ / ខែ\n\n"
+            "ការណែនាំ:\n"
             "១. ផ្ទេរប្រាក់ទៅកាន់គណនីខាងលើ\n"
-            "២. រួច **ផ្ញើរូបភាព Slip បង់ប្រាក់** មកកាន់ Bot នេះ\n"
+            "២. រួច ផ្ញើរូបភាព Slip បង់ប្រាក់ មកកាន់ Bot នេះ\n"
             "៣. Admin នឹងពិនិត្យ រួចផ្ញើ Link ចូល Group ជូន!"
         )
-        await update.effective_message.reply_text(payment_info, parse_mode='Markdown')
+        await update.effective_message.reply_text(payment_info)
 
     elif query.data.startswith("approve_"):
         user_id = int(query.data.split("_")[1])
         try:
-            # បង្កើត Link អញ្ជើញចូល Group (ប្រៀបដូចជាសំបុត្រប្រើបាន ១ ដង)
             invite_link = await context.bot.create_chat_invite_link(chat_id=GROUP_CHAT_ID, member_limit=1)
             
-            # ផ្ញើ Link ទៅកាន់អ្នកប្រើប្រាស់ដែលបានបង់ប្រាក់
+            # ផ្ញើ Link ទៅកាន់អ្នកប្រើប្រាស់
             await context.bot.send_message(
                 chat_id=user_id,
-                text=f"🎉 **ការបង់ប្រាក់ត្រូវបានអនុម័ត!**\n\nនេះជា Link សម្រាប់ចូល Group របស់អ្នក:\n{invite_link.invite_link}",
-                parse_mode='Markdown'
+                text=f"🎉 ការបង់ប្រាក់ត្រូវបានអនុម័ត!\n\nនេះជា Link សម្រាប់ចូល Group របស់អ្នក:\n{invite_link.invite_link}"
             )
             
-            # កែប្រែ Caption លើរូបភាព Slip របស់ Admin (ដោះស្រាយ Error កន្លែងនេះ)
+            # បច្ចុប្បន្នភាព Caption របស់ Admin
             old_caption = query.message.caption or ""
-            await query.edit_message_caption(
-                caption=f"{old_caption}\n\n✅ **បានអនុម័ត និងផ្ញើ Link រួចរាល់!**",
-                parse_mode='Markdown'
-            )
+            new_caption = f"{old_caption}\n\n✅ បានអនុម័ត និងផ្ញើ Link រួចរាល់!"
+            
+            await query.edit_message_caption(caption=new_caption)
         except Exception as e:
             await context.bot.send_message(chat_id=ADMIN_ID, text=f"❌ មានបញ្ហាក្នុងការបង្កើត Link: {e}")
 
@@ -62,11 +59,13 @@ async def handle_slip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     photo_file = await update.message.photo[-1].get_file()
     admin_keyboard = [[InlineKeyboardButton(f"✅ Approve ({user.first_name})", callback_data=f"approve_{user.id}")]]
     
+    username_str = f" (@{user.username})" if user.username else ""
+    caption_text = f"📩 ទទួលបាន Slip បង់ប្រាក់ថ្មី!\n\nពី៖ {user.first_name}{username_str}\nUser ID: {user.id}"
+    
     await context.bot.send_photo(
         chat_id=ADMIN_ID,
         photo=photo_file.file_id,
-        caption=f"📩 **ទទួលបាន Slip បង់ប្រាក់ថ្មី!**\n\nពី៖ {user.first_name} (@{user.username})\nUser ID: `{user.id}`",
-        parse_mode='Markdown',
+        caption=caption_text,
         reply_markup=InlineKeyboardMarkup(admin_keyboard)
     )
     await update.message.reply_text("✅ ទទួលបានរូបភាព Slip រួចរាល់! ក្រុមការងារកំពុងពិនិត្យ ហើយនឹងផ្ញើ Link ជូនក្នុងពេលឆាប់ៗ។")
