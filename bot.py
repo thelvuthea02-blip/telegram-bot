@@ -10,7 +10,7 @@ ADMIN_ID = 5182829694
 GROUP_CHAT_ID = -1004402853740
 
 # 🔗 Link រូបភាព QR Code របស់អ្នក
-QR_IMAGE_URL = 'https://i.ibb.co/LzdSsc2g/1000040068.jpg'
+QR_IMAGE_URL = 'https://ibb.co/qYy9LSLK'
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -36,25 +36,28 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "២. រួច ផ្ញើរូបភាព Slip បង់ប្រាក់ មកកាន់ Bot នេះ\n"
             "៣. Admin នឹងពិនិត្យ រួចផ្ញើ Link ចូល Group ជូន!"
         )
-        # ផ្ញើរូបភាព QR Code ទៅកាន់អ្នកប្រើប្រាស់
-        await context.bot.send_photo(
-            chat_id=query.message.chat_id,
-            photo=QR_IMAGE_URL,
-            caption=payment_info
-        )
+        
+        try:
+            # ព្យាយាមផ្ញើរូបភាព QR Code
+            await context.bot.send_photo(
+                chat_id=query.message.chat_id,
+                photo=QR_IMAGE_URL,
+                caption=payment_info
+            )
+        except Exception as e:
+            # បើមានបញ្ហារូបភាព វានឹងផ្ញើជាសារអក្សរជំនួស
+            await query.message.reply_text(payment_info)
 
     elif query.data.startswith("approve_"):
         user_id = int(query.data.split("_")[1])
         try:
             invite_link = await context.bot.create_chat_invite_link(chat_id=GROUP_CHAT_ID, member_limit=1)
             
-            # ផ្ញើ Link ទៅកាន់អ្នកប្រើប្រាស់
             await context.bot.send_message(
                 chat_id=user_id,
                 text=f"🎉 ការបង់ប្រាក់ត្រូវបានអនុម័ត!\n\nនេះជា Link សម្រាប់ចូល Group របស់អ្នក:\n{invite_link.invite_link}"
             )
             
-            # បច្ចុប្បន្នភាព Caption របស់ Admin
             old_caption = query.message.caption or ""
             new_caption = f"{old_caption}\n\n✅ បានអនុម័ត និងផ្ញើ Link រួចរាល់!"
             
