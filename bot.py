@@ -9,6 +9,9 @@ TOKEN = '8559286512:AAFi9rSAdBv_gp4WBPxJNssI4Eh5BpJJrHM'
 ADMIN_ID = 5182829694
 GROUP_CHAT_ID = -1004402853740
 
+# 🔗 Link រូបភាព QR Code របស់អ្នក
+QR_IMAGE_URL = 'https://i.ibb.co/LzdSsc2g/1000040068.jpg'
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -29,11 +32,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🏦 ABA Bank: 000 111 222 (Thel Vuthea)\n"
             "💵 តម្លៃ VIP: 2$ / ខែ\n\n"
             "ការណែនាំ:\n"
-            "១. ផ្ទេរប្រាក់ទៅកាន់គណនីខាងលើ\n"
+            "១. ស្កែន QR Code ខាងលើ ឬផ្ទេរតាមលេខគណនី\n"
             "២. រួច ផ្ញើរូបភាព Slip បង់ប្រាក់ មកកាន់ Bot នេះ\n"
             "៣. Admin នឹងពិនិត្យ រួចផ្ញើ Link ចូល Group ជូន!"
         )
-        await update.effective_message.reply_text(payment_info)
+        # ផ្ញើរូបភាព QR Code ទៅកាន់អ្នកប្រើប្រាស់
+        await context.bot.send_photo(
+            chat_id=query.message.chat_id,
+            photo=QR_IMAGE_URL,
+            caption=payment_info
+        )
 
     elif query.data.startswith("approve_"):
         user_id = int(query.data.split("_")[1])
