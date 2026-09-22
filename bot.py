@@ -1,5 +1,4 @@
 import logging
-import asyncio
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -11,7 +10,7 @@ TOKEN = '8559286512:AAFi9rSAdBv_gp4WBPxJNssI4Eh5BpJJrHM'
 ADMIN_ID = 5182829694
 GROUP_CHAT_ID = -1004402853740
 
-# 🔑 Bakong Token & ACLEDA Account របស់អ្នក
+# 🔑 Bakong Account របស់អ្នក
 BAKONG_TOKEN = '35e7a52b60bc4c20b968'
 BAKONG_ACCOUNT = '0965775243@acleda'
 
@@ -19,87 +18,36 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name
-    keyboard = [[InlineKeyboardButton("💳 មើលព័ត៌មានបង់ប្រាក់ (KHQR Auto)", callback_data="show_qr")]]
+    keyboard = [[InlineKeyboardButton("💳 មើលព័ត៌មានបង់ប្រាក់", callback_data="show_qr")]]
     await update.message.reply_text(
-        f"សួស្តី {user_name}! ស្វាគមន៍មកកាន់សេវាកម្មមើលរឿង VIP 🎬\n\nសូមចុចប៊ូតុងខាងក្រោមដើម្បីទទួលបាន QR Code បង់ប្រាក់ស្វ័យប្រវត្តិ។",
+        f"សួស្តី {user_name}! ស្វាគមន៍មកកាន់សេវាកម្មមើលរឿង VIP 🎬\n\nសូមចុចប៊ូតុងខាងក្រោមដើម្បីទទួលបានព័ត៌មានបង់ប្រាក់។",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
-def generate_bakong_qr(user_id):
-    """ហៅ API ទៅ Bakong ដើម្បីបង្កើត Dynamic KHQR Code សម្រាប់ ACLEDA"""
-    url = "https://api-bakong.nbc.gov.kh/v1/generate_khqr"
-    headers = {"Authorization": f"Bearer {BAKONG_TOKEN}"}
-    payload = {
-        "accountId": BAKONG_ACCOUNT,
-        "amount": 2.00,
-        "currency": "USD",
-        "merchantName": "VIP Movie Group",
-        "billNumber": f"ORDER-{user_id}"
-    }
-    try:
-        res = requests.post(url, json=payload, headers=headers)
-        if res.status_code == 200:
-            data = res.json().get('data', {})
-            return data.get('md5'), data.get('qr')
-    except Exception as e:
-        logging.error(f"Error generating KHQR: {e}")
-    return None, None
-
-def check_bakong_payment(md5_hash):
-    """ពិនិត្យមើលថាតើមានប្រាក់ចូលគណនី ACLEDA ឬនៅតាមរយៈ MD5 Hash"""
-    url = f"https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5/{md5_hash}"
-    headers = {"Authorization": f"Bearer {BAKONG_TOKEN}"}
-    try:
-        res = requests.get(url, headers=headers)
-        if res.status_code == 200:
-            res_data = res.json()
-            if res_data.get('responseCode') == 0 and res_data.get('data'):
-                return True
-    except Exception as e:
-        logging.error(f"Error checking payment: {e}")
-    return False
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
     if query.data == "show_qr":
-        user_id = query.from_user.id
-        await query.message.reply_text("⏳ កំពុងបង្កើត Dynamic KHQR Code សូមរង់ចាំបន្តិច...")
-        
-        md5_hash, qr_data = generate_bakong_qr(user_id)
-        
         payment_info = (
             "📥 ព័ត៌មានសម្រាប់ការបង់ប្រាក់ (ACLEDA KHQR):\n\n"
+            "🏦 ACLEDA Bank: 0965775243\n"
             "💵 តម្លៃ VIP: 2.00$ / ខែ\n\n"
             "ការណែនាំ:\n"
-            "១. ស្កែន QR Code ខាងលើដោយប្រើ App ធនាគារណាក៏បាន (ACLEDA, ABA, Wing...)\n"
-            "២. ពេលបង់ប្រាក់រួចរាល់ ប្រព័ន្ធនឹងផ្ញើ Link ចូល Group ដោយស្វ័យប្រវត្តិ (Auto-Approve)!"
+            "១. ស្កែន QR Code ឬផ្ទេរតាមលេខគណនីខាងលើ\n"
+            "២. រួចផ្ញើរូបភាព Slip បង់ប្រាក់មកកាន់ Bot នេះ\n"
+            "៣. Admin នឹងពិនិត្យ រួចផ្ញើ Link ចូល Group ជូន!"
         )
         
-        if qr_data:
-            qr_image_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={qr_data}"
+        # ព្យាយាមបង្កើត Dynamic QR
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={BAKONG_ACCOUNT}"
+        try:
             await context.bot.send_photo(
                 chat_id=query.message.chat_id,
-                photo=qr_image_url,
+                photo=qr_url,
                 caption=payment_info
             )
-            
-            # រង់ចាំពិនិត្យការបង់ប្រាក់ ៣ នាទី
-            for _ in range(36):
-                await asyncio.sleep(5)
-                if check_bakong_payment(md5_hash):
-                    invite_link = await context.bot.create_chat_invite_link(chat_id=GROUP_CHAT_ID, member_limit=1)
-                    await context.bot.send_message(
-                        chat_id=user_id,
-                        text=f"🎉 ទទួលបានការបង់ប្រាក់ជោគជ័យ!\n\nនេះជា Link សម្រាប់ចូល Group VIP របស់អ្នក:\n{invite_link.invite_link}"
-                    )
-                    await context.bot.send_message(
-                        chat_id=ADMIN_ID,
-                        text=f"✅ User ID `{user_id}` បានបង់ប្រាក់ 2$ ចូល ACLEDA ជោគជ័យ (Auto-Approved)!"
-                    )
-                    return
-        else:
+        except Exception:
             await query.message.reply_text(payment_info)
 
     elif query.data.startswith("approve_"):
@@ -137,4 +85,3 @@ if __name__ == '__main__':
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND, handle_slip))
     app.run_polling()
- 
