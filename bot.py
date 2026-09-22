@@ -10,9 +10,9 @@ TOKEN = '8559286512:AAFi9rSAdBv_gp4WBPxJNssI4Eh5BpJJrHM'
 ADMIN_ID = 5182829694
 GROUP_CHAT_ID = -1004402853740
 
-# 🔑 Bakong Account របស់អ្នក
+# 🔑 BAKONG ACCOUNT (ACLEDA)
 BAKONG_TOKEN = '35e7a52b60bc4c20b968'
-BAKONG_ACCOUNT = '0965775243@acleda'
+BAKONG_ACCOUNT = '0965775243@acleda'  # លេខគណនី ACLEDA របស់អ្នក
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -31,23 +31,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "show_qr":
         payment_info = (
             "📥 ព័ត៌មានសម្រាប់ការបង់ប្រាក់ (ACLEDA KHQR):\n\n"
-            "🏦 ACLEDA Bank: 0965775243\n"
+            "🏦 ធនាគារ អេស៊ីលីដា (ACLEDA): 0965775243\n"
             "💵 តម្លៃ VIP: 2.00$ / ខែ\n\n"
             "ការណែនាំ:\n"
-            "១. ស្កែន QR Code ឬផ្ទេរតាមលេខគណនីខាងលើ\n"
+            "១. ស្កែន QR Code ខាងលើ ឬផ្ទេរតាមលេខគណនី 0965775243\n"
             "២. រួចផ្ញើរូបភាព Slip បង់ប្រាក់មកកាន់ Bot នេះ\n"
             "៣. Admin នឹងពិនិត្យ រួចផ្ញើ Link ចូល Group ជូន!"
         )
         
-        # ព្យាយាមបង្កើត Dynamic QR
-        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={BAKONG_ACCOUNT}"
+        # បង្កើត QR Code រូបភាព
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=0965775243"
+        
         try:
             await context.bot.send_photo(
                 chat_id=query.message.chat_id,
                 photo=qr_url,
                 caption=payment_info
             )
-        except Exception:
+        except Exception as e:
+            logging.error(f"Error sending photo: {e}")
             await query.message.reply_text(payment_info)
 
     elif query.data.startswith("approve_"):
