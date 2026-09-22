@@ -11,9 +11,9 @@ TOKEN = '8559286512:AAFi9rSAdBv_gp4WBPxJNssI4Eh5BpJJrHM'
 ADMIN_ID = 5182829694
 GROUP_CHAT_ID = -1004402853740
 
-# 🔑 Bakong API Token របស់អ្នក
+# 🔑 Bakong Token & ACLEDA Account របស់អ្នក
 BAKONG_TOKEN = '35e7a52b60bc4c20b968'
-BAKONG_ACCOUNT = 'vuthea_thel@abaa' # ដាក់ Bakong ID ឬ ABA Account របស់អ្នក (ឧ. phone_number@abaa)
+BAKONG_ACCOUNT = '0965775243@acleda'
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -26,7 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 def generate_bakong_qr(user_id):
-    """ហៅ API ទៅ Bakong ដើម្បីបង្កើត Dynamic KHQR Code"""
+    """ហៅ API ទៅ Bakong ដើម្បីបង្កើត Dynamic KHQR Code សម្រាប់ ACLEDA"""
     url = "https://api-bakong.nbc.gov.kh/v1/generate_khqr"
     headers = {"Authorization": f"Bearer {BAKONG_TOKEN}"}
     payload = {
@@ -46,7 +46,7 @@ def generate_bakong_qr(user_id):
     return None, None
 
 def check_bakong_payment(md5_hash):
-    """ពិនិត្យមើលថាតើមានប្រាក់ 들어လာ ឬនៅតាមរយៈ MD5 Hash"""
+    """ពិនិត្យមើលថាតើមានប្រាក់ចូលគណនី ACLEDA ឬនៅតាមរយៈ MD5 Hash"""
     url = f"https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5/{md5_hash}"
     headers = {"Authorization": f"Bearer {BAKONG_TOKEN}"}
     try:
@@ -70,15 +70,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         md5_hash, qr_data = generate_bakong_qr(user_id)
         
         payment_info = (
-            "📥 ព័ត៌មានសម្រាប់ការបង់ប្រាក់:\n\n"
+            "📥 ព័ត៌មានសម្រាប់ការបង់ប្រាក់ (ACLEDA KHQR):\n\n"
             "💵 តម្លៃ VIP: 2.00$ / ខែ\n\n"
             "ការណែនាំ:\n"
-            "១. ស្កែន QR Code ខាងលើ ឬប្រើប្រាស់ App ធនាគារបស់អ្នក\n"
+            "១. ស្កែន QR Code ខាងលើដោយប្រើ App ធនាគារណាក៏បាន (ACLEDA, ABA, Wing...)\n"
             "២. ពេលបង់ប្រាក់រួចរាល់ ប្រព័ន្ធនឹងផ្ញើ Link ចូល Group ដោយស្វ័យប្រវត្តិ (Auto-Approve)!"
         )
         
         if qr_data:
-            # បង្កើតរូប QR Code តាមរយៈ QR API Service
             qr_image_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={qr_data}"
             await context.bot.send_photo(
                 chat_id=query.message.chat_id,
@@ -86,11 +85,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 caption=payment_info
             )
             
-            # ចាប់ផ្តើមរត់ Loop ឆែកមើលការបង់ប្រាក់ស្វ័យប្រវត្តិរយៈពេល ៣ នាទី
-            for _ in range(36): # ឆែករៀងរាល់ ៥ វិនាទីម្តង (36 x 5s = 180s)
+            # រង់ចាំពិនិត្យការបង់ប្រាក់ ៣ នាទី
+            for _ in range(36):
                 await asyncio.sleep(5)
                 if check_bakong_payment(md5_hash):
-                    # ពេលបង់ប្រាក់ជោគជ័យ -> Auto Generate Link & Send!
                     invite_link = await context.bot.create_chat_invite_link(chat_id=GROUP_CHAT_ID, member_limit=1)
                     await context.bot.send_message(
                         chat_id=user_id,
@@ -98,7 +96,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     )
                     await context.bot.send_message(
                         chat_id=ADMIN_ID,
-                        text=f"✅ User ID `{user_id}` បានបង់ប្រាក់ 2$ តាម KHQR ជោគជ័យ (Auto-Approved)!"
+                        text=f"✅ User ID `{user_id}` បានបង់ប្រាក់ 2$ ចូល ACLEDA ជោគជ័យ (Auto-Approved)!"
                     )
                     return
         else:
@@ -139,3 +137,4 @@ if __name__ == '__main__':
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND, handle_slip))
     app.run_polling()
+ 
